@@ -1,0 +1,8 @@
+version: '2.1'
+
+services:
+  go-graphql-news-feed-subscription:
+    image: go-graphql-news-feed-subscription
+    build: .
+    ports:
+      - 8080:8080
