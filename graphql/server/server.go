@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/99designs/gqlgen/handler"
+	badger "github.com/dgraph-io/badger"
 	"github.com/mainawycliffe/go-graphql-news-feed-subscription/graphql"
 )
 
@@ -17,8 +18,22 @@ func main() {
 		port = defaultPort
 	}
 
+	db, err := badger.Open(badger.DefaultOptions("tmp/badger"))
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer db.Close()
+
 	http.Handle("/", handler.Playground("GraphQL playground", "/query"))
-	http.Handle("/query", handler.GraphQL(graphql.NewExecutableSchema(graphql.Config{Resolvers: &graphql.Resolver{}})))
+	http.Handle("/query", handler.GraphQL(
+		graphql.NewExecutableSchema(
+			graphql.Config{
+				Resolvers: graphql.GetResolver(db),
+			},
+		),
+	))
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))

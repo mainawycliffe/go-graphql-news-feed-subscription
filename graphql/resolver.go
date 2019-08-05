@@ -3,11 +3,21 @@ package graphql
 
 import (
 	"context"
+
+	badger "github.com/dgraph-io/badger"
 )
 
 // THIS CODE IS A STARTING POINT ONLY. IT WILL NOT BE UPDATED WITH SCHEMA CHANGES.
 
-type Resolver struct{}
+func GetResolver(db *badger.DB) *Resolver {
+	return &Resolver{
+		db: db,
+	}
+}
+
+type Resolver struct {
+	db *badger.DB
+}
 
 func (r *Resolver) Mutation() MutationResolver {
 	return &mutationResolver{r}
@@ -24,6 +34,7 @@ func (r *Resolver) Subscription() SubscriptionResolver {
 type mutationResolver struct{ *Resolver }
 
 func (r *mutationResolver) Share(ctx context.Context, post NewPost) (*Post, error) {
+
 	panic("not implemented")
 }
 
