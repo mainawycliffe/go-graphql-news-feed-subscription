@@ -1,0 +1,40 @@
+scalar Time
+scalar Upload
+
+type Category {
+  ID: ID!
+  name: String!
+  slug: String!
+}
+
+type Post {
+  id: ID!
+  imageURL: String!
+  title: String!
+  summary: String!
+  link: String!
+  category: Category!
+  postedOn: Time!
+}
+
+input NewPost {
+  image: Upload
+  title: String!
+  summary: String!
+  link: String!
+  category: String!
+}
+
+type Mutation {
+  share(post: NewPost!): Post!
+}
+
+type Query {
+  postsByCategory(postID: String!): [Post!]!
+  allPosts: [Post!]!
+}
+
+type Subscription {
+  newPostsByCategory(category: ID!): [Post!]!
+  newPosts: [Post!]!
+}
