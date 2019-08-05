@@ -13,10 +13,4 @@ resolver:
   filename: resolver.go
   type: Resolver
 autobind: []
-directives:
-  deprecated:
-    skip_runtime: true
-  include:
-    skip_runtime: true
-  skip:
-    skip_runtime: true
+ 

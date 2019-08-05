@@ -22,7 +22,7 @@ input NewPost {
   title: String!
   summary: String!
   link: String!
-  category: String!
+  categoryID: String!
 }
 
 type Mutation {

@@ -15,11 +15,11 @@ type Category struct {
 }
 
 type NewPost struct {
-	Image    *graphql.Upload `json:"image"`
-	Title    string          `json:"title"`
-	Summary  string          `json:"summary"`
-	Link     string          `json:"link"`
-	Category string          `json:"category"`
+	Image      *graphql.Upload `json:"image"`
+	Title      string          `json:"title"`
+	Summary    string          `json:"summary"`
+	Link       string          `json:"link"`
+	CategoryID string          `json:"categoryID"`
 }
 
 type Post struct {

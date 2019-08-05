@@ -338,7 +338,7 @@ input NewPost {
   title: String!
   summary: String!
   link: String!
-  category: String!
+  categoryID: String!
 }
 
 type Mutation {
@@ -2266,9 +2266,9 @@ func (ec *executionContext) unmarshalInputNewPost(ctx context.Context, obj inter
 			if err != nil {
 				return it, err
 			}
-		case "category":
+		case "categoryID":
 			var err error
-			it.Category, err = ec.unmarshalNString2string(ctx, v)
+			it.CategoryID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
