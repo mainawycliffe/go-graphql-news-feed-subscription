@@ -1,6 +1,7 @@
 
 #build stage
 FROM golang:alpine AS builder
+ENV GOPROXY=https://proxy.golang.org
 WORKDIR /app
 COPY . .
 WORKDIR /app/graphql/server
