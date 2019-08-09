@@ -3,20 +3,22 @@ package graphql
 
 import (
 	"context"
-
-	badger "github.com/dgraph-io/badger"
+	"sync"
 )
 
 // THIS CODE IS A STARTING POINT ONLY. IT WILL NOT BE UPDATED WITH SCHEMA CHANGES.
 
-func GetResolver(db *badger.DB) *Resolver {
+func GraphQLServer() *Resolver {
+
 	return &Resolver{
-		db: db,
+		posts: nil,
+		mutex: sync.Mutex{},
 	}
 }
 
 type Resolver struct {
-	db *badger.DB
+	posts []*Post
+	mutex sync.Mutex
 }
 
 func (r *Resolver) Mutation() MutationResolver {
@@ -34,26 +36,17 @@ func (r *Resolver) Subscription() SubscriptionResolver {
 type mutationResolver struct{ *Resolver }
 
 func (r *mutationResolver) Share(ctx context.Context, post NewPost) (*Post, error) {
-
-	panic("not implemented")
+	panic("not implemented!")
 }
 
 type queryResolver struct{ *Resolver }
 
-func (r *queryResolver) PostsByCategory(ctx context.Context, postID string) ([]*Post, error) {
-	panic("not implemented")
-}
-
-func (r *queryResolver) AllPosts(ctx context.Context) ([]*Post, error) {
-	panic("not implemented")
+func (r *queryResolver) GetPosts(ctx context.Context) ([]*Post, error) {
+	return r.posts, nil
 }
 
 type subscriptionResolver struct{ *Resolver }
 
-func (r *subscriptionResolver) NewPostsByCategory(ctx context.Context, category string) (<-chan []*Post, error) {
-	panic("not implemented")
-}
-
-func (r *subscriptionResolver) NewPosts(ctx context.Context) (<-chan []*Post, error) {
+func (r *subscriptionResolver) NewPostAdded(ctx context.Context) (<-chan *Post, error) {
 	panic("not implemented")
 }

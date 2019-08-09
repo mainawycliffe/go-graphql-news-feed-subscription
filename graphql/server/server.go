@@ -1,40 +1,38 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/99designs/gqlgen/handler"
-	badger "github.com/dgraph-io/badger"
 	"github.com/mainawycliffe/go-graphql-news-feed-subscription/graphql"
 )
 
 const defaultPort = "8080"
 
-func main() {
+func getPort() string {
 	port := os.Getenv("PORT")
+
 	if port == "" {
 		port = defaultPort
 	}
 
-	db, err := badger.Open(badger.DefaultOptions("tmp/badger"))
+	return port
+}
 
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer db.Close()
+func main() {
 
 	http.Handle("/", handler.Playground("GraphQL playground", "/query"))
 	http.Handle("/query", handler.GraphQL(
 		graphql.NewExecutableSchema(
 			graphql.Config{
-				Resolvers: graphql.GetResolver(db),
+				Resolvers: graphql.GraphQLServer(),
 			},
 		),
 	))
 
-	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Printf("connect to http://localhost:%s/ for GraphQL playground", getPort())
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", getPort()), nil))
 }

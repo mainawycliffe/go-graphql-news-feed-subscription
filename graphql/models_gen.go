@@ -8,26 +8,18 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
-type Category struct {
-	ID   string `json:"ID"`
-	Name string `json:"name"`
-	Slug string `json:"slug"`
-}
-
 type NewPost struct {
-	Image      *graphql.Upload `json:"image"`
-	Title      string          `json:"title"`
-	Summary    string          `json:"summary"`
-	Link       string          `json:"link"`
-	CategoryID string          `json:"categoryID"`
+	Image   *graphql.Upload `json:"image"`
+	Title   string          `json:"title"`
+	Summary string          `json:"summary"`
+	Link    string          `json:"link"`
 }
 
 type Post struct {
 	ID       string    `json:"id"`
 	ImageURL string    `json:"imageURL"`
 	Title    string    `json:"title"`
-	Summary  string    `json:"summary"`
+	Content  string    `json:"content"`
 	Link     string    `json:"link"`
-	Category *Category `json:"category"`
 	PostedOn time.Time `json:"postedOn"`
 }

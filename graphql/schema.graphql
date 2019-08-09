@@ -1,19 +1,12 @@
 scalar Time
 scalar Upload
 
-type Category {
-  ID: ID!
-  name: String!
-  slug: String!
-}
-
 type Post {
   id: ID!
   imageURL: String!
   title: String!
-  summary: String!
+  content: String!
   link: String!
-  category: Category!
   postedOn: Time!
 }
 
@@ -22,7 +15,6 @@ input NewPost {
   title: String!
   summary: String!
   link: String!
-  categoryID: String!
 }
 
 type Mutation {
@@ -30,11 +22,9 @@ type Mutation {
 }
 
 type Query {
-  postsByCategory(postID: String!): [Post!]!
-  allPosts: [Post!]!
+  getPosts: [Post!]!
 }
 
 type Subscription {
-  newPostsByCategory(category: ID!): [Post!]!
-  newPosts: [Post!]!
+  NewPostAdded: Post!
 }

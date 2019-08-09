@@ -45,34 +45,25 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
-	Category struct {
-		ID   func(childComplexity int) int
-		Name func(childComplexity int) int
-		Slug func(childComplexity int) int
-	}
-
 	Mutation struct {
 		Share func(childComplexity int, post NewPost) int
 	}
 
 	Post struct {
-		Category func(childComplexity int) int
+		Content  func(childComplexity int) int
 		ID       func(childComplexity int) int
 		ImageURL func(childComplexity int) int
 		Link     func(childComplexity int) int
 		PostedOn func(childComplexity int) int
-		Summary  func(childComplexity int) int
 		Title    func(childComplexity int) int
 	}
 
 	Query struct {
-		AllPosts        func(childComplexity int) int
-		PostsByCategory func(childComplexity int, postID string) int
+		GetPosts func(childComplexity int) int
 	}
 
 	Subscription struct {
-		NewPosts           func(childComplexity int) int
-		NewPostsByCategory func(childComplexity int, category string) int
+		NewPostAdded func(childComplexity int) int
 	}
 }
 
@@ -80,12 +71,10 @@ type MutationResolver interface {
 	Share(ctx context.Context, post NewPost) (*Post, error)
 }
 type QueryResolver interface {
-	PostsByCategory(ctx context.Context, postID string) ([]*Post, error)
-	AllPosts(ctx context.Context) ([]*Post, error)
+	GetPosts(ctx context.Context) ([]*Post, error)
 }
 type SubscriptionResolver interface {
-	NewPostsByCategory(ctx context.Context, category string) (<-chan []*Post, error)
-	NewPosts(ctx context.Context) (<-chan []*Post, error)
+	NewPostAdded(ctx context.Context) (<-chan *Post, error)
 }
 
 type executableSchema struct {
@@ -103,27 +92,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
-	case "Category.ID":
-		if e.complexity.Category.ID == nil {
-			break
-		}
-
-		return e.complexity.Category.ID(childComplexity), true
-
-	case "Category.name":
-		if e.complexity.Category.Name == nil {
-			break
-		}
-
-		return e.complexity.Category.Name(childComplexity), true
-
-	case "Category.slug":
-		if e.complexity.Category.Slug == nil {
-			break
-		}
-
-		return e.complexity.Category.Slug(childComplexity), true
-
 	case "Mutation.share":
 		if e.complexity.Mutation.Share == nil {
 			break
@@ -136,12 +104,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Share(childComplexity, args["post"].(NewPost)), true
 
-	case "Post.category":
-		if e.complexity.Post.Category == nil {
+	case "Post.content":
+		if e.complexity.Post.Content == nil {
 			break
 		}
 
-		return e.complexity.Post.Category(childComplexity), true
+		return e.complexity.Post.Content(childComplexity), true
 
 	case "Post.id":
 		if e.complexity.Post.ID == nil {
@@ -171,13 +139,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Post.PostedOn(childComplexity), true
 
-	case "Post.summary":
-		if e.complexity.Post.Summary == nil {
-			break
-		}
-
-		return e.complexity.Post.Summary(childComplexity), true
-
 	case "Post.title":
 		if e.complexity.Post.Title == nil {
 			break
@@ -185,43 +146,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Post.Title(childComplexity), true
 
-	case "Query.allPosts":
-		if e.complexity.Query.AllPosts == nil {
+	case "Query.getPosts":
+		if e.complexity.Query.GetPosts == nil {
 			break
 		}
 
-		return e.complexity.Query.AllPosts(childComplexity), true
+		return e.complexity.Query.GetPosts(childComplexity), true
 
-	case "Query.postsByCategory":
-		if e.complexity.Query.PostsByCategory == nil {
+	case "Subscription.NewPostAdded":
+		if e.complexity.Subscription.NewPostAdded == nil {
 			break
 		}
 
-		args, err := ec.field_Query_postsByCategory_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.PostsByCategory(childComplexity, args["postID"].(string)), true
-
-	case "Subscription.newPosts":
-		if e.complexity.Subscription.NewPosts == nil {
-			break
-		}
-
-		return e.complexity.Subscription.NewPosts(childComplexity), true
-
-	case "Subscription.newPostsByCategory":
-		if e.complexity.Subscription.NewPostsByCategory == nil {
-			break
-		}
-
-		args, err := ec.field_Subscription_newPostsByCategory_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Subscription.NewPostsByCategory(childComplexity, args["category"].(string)), true
+		return e.complexity.Subscription.NewPostAdded(childComplexity), true
 
 	}
 	return 0, false
@@ -317,19 +254,12 @@ var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `scalar Time
 scalar Upload
 
-type Category {
-  ID: ID!
-  name: String!
-  slug: String!
-}
-
 type Post {
   id: ID!
   imageURL: String!
   title: String!
-  summary: String!
+  content: String!
   link: String!
-  category: Category!
   postedOn: Time!
 }
 
@@ -338,7 +268,6 @@ input NewPost {
   title: String!
   summary: String!
   link: String!
-  categoryID: String!
 }
 
 type Mutation {
@@ -346,13 +275,11 @@ type Mutation {
 }
 
 type Query {
-  postsByCategory(postID: String!): [Post!]!
-  allPosts: [Post!]!
+  getPosts: [Post!]!
 }
 
 type Subscription {
-  newPostsByCategory(category: ID!): [Post!]!
-  newPosts: [Post!]!
+  NewPostAdded: Post!
 }
 `},
 )
@@ -386,34 +313,6 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_postsByCategory_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["postID"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["postID"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Subscription_newPostsByCategory_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["category"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["category"] = arg0
 	return args, nil
 }
 
@@ -452,117 +351,6 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
-
-func (ec *executionContext) _Category_ID(ctx context.Context, field graphql.CollectedField, obj *Category) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Category",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Category_name(ctx context.Context, field graphql.CollectedField, obj *Category) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Category",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Category_slug(ctx context.Context, field graphql.CollectedField, obj *Category) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Category",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Slug, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
 
 func (ec *executionContext) _Mutation_share(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
@@ -719,7 +507,7 @@ func (ec *executionContext) _Post_title(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Post_summary(ctx context.Context, field graphql.CollectedField, obj *Post) (ret graphql.Marshaler) {
+func (ec *executionContext) _Post_content(ctx context.Context, field graphql.CollectedField, obj *Post) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -738,7 +526,7 @@ func (ec *executionContext) _Post_summary(ctx context.Context, field graphql.Col
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Summary, nil
+		return obj.Content, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -793,43 +581,6 @@ func (ec *executionContext) _Post_link(ctx context.Context, field graphql.Collec
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Post_category(ctx context.Context, field graphql.CollectedField, obj *Post) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Post",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Category, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*Category)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNCategory2ᚖgithubᚗcomᚋmainawycliffeᚋgoᚑgraphqlᚑnewsᚑfeedᚑsubscriptionᚋgraphqlᚐCategory(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Post_postedOn(ctx context.Context, field graphql.CollectedField, obj *Post) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -867,51 +618,7 @@ func (ec *executionContext) _Post_postedOn(ctx context.Context, field graphql.Co
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_postsByCategory(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_postsByCategory_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().PostsByCategory(rctx, args["postID"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*Post)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNPost2ᚕᚖgithubᚗcomᚋmainawycliffeᚋgoᚑgraphqlᚑnewsᚑfeedᚑsubscriptionᚋgraphqlᚐPost(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_allPosts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_getPosts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -930,7 +637,7 @@ func (ec *executionContext) _Query_allPosts(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().AllPosts(rctx)
+		return ec.resolvers.Query().GetPosts(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1023,21 +730,15 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Subscription_newPostsByCategory(ctx context.Context, field graphql.CollectedField) func() graphql.Marshaler {
+func (ec *executionContext) _Subscription_NewPostAdded(ctx context.Context, field graphql.CollectedField) func() graphql.Marshaler {
 	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
 		Field: field,
 		Args:  nil,
 	})
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Subscription_newPostsByCategory_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return nil
-	}
 	// FIXME: subscriptions are missing request middleware stack https://github.com/99designs/gqlgen/issues/259
 	//          and Tracer stack
 	rctx := ctx
-	results, err := ec.resolvers.Subscription().NewPostsByCategory(rctx, args["category"].(string))
+	results, err := ec.resolvers.Subscription().NewPostAdded(rctx)
 	if err != nil {
 		ec.Error(ctx, err)
 		return nil
@@ -1051,35 +752,7 @@ func (ec *executionContext) _Subscription_newPostsByCategory(ctx context.Context
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNPost2ᚕᚖgithubᚗcomᚋmainawycliffeᚋgoᚑgraphqlᚑnewsᚑfeedᚑsubscriptionᚋgraphqlᚐPost(ctx, field.Selections, res).MarshalGQL(w)
-			w.Write([]byte{'}'})
-		})
-	}
-}
-
-func (ec *executionContext) _Subscription_newPosts(ctx context.Context, field graphql.CollectedField) func() graphql.Marshaler {
-	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
-		Field: field,
-		Args:  nil,
-	})
-	// FIXME: subscriptions are missing request middleware stack https://github.com/99designs/gqlgen/issues/259
-	//          and Tracer stack
-	rctx := ctx
-	results, err := ec.resolvers.Subscription().NewPosts(rctx)
-	if err != nil {
-		ec.Error(ctx, err)
-		return nil
-	}
-	return func() graphql.Marshaler {
-		res, ok := <-results
-		if !ok {
-			return nil
-		}
-		return graphql.WriterFunc(func(w io.Writer) {
-			w.Write([]byte{'{'})
-			graphql.MarshalString(field.Alias).MarshalGQL(w)
-			w.Write([]byte{':'})
-			ec.marshalNPost2ᚕᚖgithubᚗcomᚋmainawycliffeᚋgoᚑgraphqlᚑnewsᚑfeedᚑsubscriptionᚋgraphqlᚐPost(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNPost2ᚖgithubᚗcomᚋmainawycliffeᚋgoᚑgraphqlᚑnewsᚑfeedᚑsubscriptionᚋgraphqlᚐPost(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -2266,12 +1939,6 @@ func (ec *executionContext) unmarshalInputNewPost(ctx context.Context, obj inter
 			if err != nil {
 				return it, err
 			}
-		case "categoryID":
-			var err error
-			it.CategoryID, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		}
 	}
 
@@ -2285,43 +1952,6 @@ func (ec *executionContext) unmarshalInputNewPost(ctx context.Context, obj inter
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
-
-var categoryImplementors = []string{"Category"}
-
-func (ec *executionContext) _Category(ctx context.Context, sel ast.SelectionSet, obj *Category) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, categoryImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Category")
-		case "ID":
-			out.Values[i] = ec._Category_ID(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "name":
-			out.Values[i] = ec._Category_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "slug":
-			out.Values[i] = ec._Category_slug(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
 
 var mutationImplementors = []string{"Mutation"}
 
@@ -2380,18 +2010,13 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "summary":
-			out.Values[i] = ec._Post_summary(ctx, field, obj)
+		case "content":
+			out.Values[i] = ec._Post_content(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "link":
 			out.Values[i] = ec._Post_link(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "category":
-			out.Values[i] = ec._Post_category(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2426,7 +2051,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "postsByCategory":
+		case "getPosts":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -2434,21 +2059,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_postsByCategory(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "allPosts":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_allPosts(ctx, field)
+				res = ec._Query_getPosts(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -2482,10 +2093,8 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 	}
 
 	switch fields[0].Name {
-	case "newPostsByCategory":
-		return ec._Subscription_newPostsByCategory(ctx, fields[0])
-	case "newPosts":
-		return ec._Subscription_newPosts(ctx, fields[0])
+	case "NewPostAdded":
+		return ec._Subscription_NewPostAdded(ctx, fields[0])
 	default:
 		panic("unknown field " + strconv.Quote(fields[0].Name))
 	}
@@ -2748,20 +2357,6 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) marshalNCategory2githubᚗcomᚋmainawycliffeᚋgoᚑgraphqlᚑnewsᚑfeedᚑsubscriptionᚋgraphqlᚐCategory(ctx context.Context, sel ast.SelectionSet, v Category) graphql.Marshaler {
-	return ec._Category(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNCategory2ᚖgithubᚗcomᚋmainawycliffeᚋgoᚑgraphqlᚑnewsᚑfeedᚑsubscriptionᚋgraphqlᚐCategory(ctx context.Context, sel ast.SelectionSet, v *Category) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Category(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
