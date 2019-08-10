@@ -134,9 +134,9 @@ func randString(n int) string {
 
 func saveUploadedFile(image *graphql.Upload) (string, error) {
 
-	filaname := fmt.Sprintf("%s%s", randString(20), filepath.Ext(image.Filename))
+	filename := fmt.Sprintf("%s%s", randString(20), filepath.Ext(image.Filename))
 
-	f, err := os.Create(fmt.Sprintf("%s/%s", imageDir, filaname))
+	f, err := os.Create(fmt.Sprintf("%s/%s", imageDir, filename))
 
 	if err != nil {
 		return "", err
@@ -154,5 +154,5 @@ func saveUploadedFile(image *graphql.Upload) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("http://localhost:8080/%s/%s", imageDir, image.Filename), nil
+	return fmt.Sprintf("http://localhost:8080/%s/%s", imageDir, filename), nil
 }
