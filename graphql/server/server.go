@@ -24,6 +24,7 @@ func getPort() string {
 
 func main() {
 
+	http.Handle("/images/", http.StripPrefix("/images/", http.FileServer(http.Dir("images"))))
 	http.Handle("/", handler.Playground("GraphQL playground", "/query"))
 	http.Handle("/query", handler.GraphQL(
 		graphql.NewExecutableSchema(
