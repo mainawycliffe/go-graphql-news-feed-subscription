@@ -8,6 +8,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -126,7 +127,10 @@ func randString(n int) string {
 }
 
 func saveUploadedFile(image *graphql.Upload) (string, error) {
-	f, err := os.Create(fmt.Sprintf("%s/%s", imageDir, image.Filename))
+
+	filaname := fmt.Sprintf("%s%s", randString(20), filepath.Ext(image.Filename))
+
+	f, err := os.Create(fmt.Sprintf("%s/%s", imageDir, filaname))
 
 	if err != nil {
 		return "", err
