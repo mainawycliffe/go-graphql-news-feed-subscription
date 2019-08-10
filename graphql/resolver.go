@@ -24,8 +24,9 @@ var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 func GraphQLServer() *Resolver {
 
 	return &Resolver{
-		Posts: nil,
-		mutex: sync.Mutex{},
+		Posts:         nil,
+		ListenToPosts: map[string]struct{ Post chan *Post }{},
+		mutex:         sync.Mutex{},
 	}
 }
 
