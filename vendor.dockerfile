@@ -15,6 +15,6 @@ RUN go build -v -o app -mod=vendor
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 COPY --from=builder /app/graphql/server/app /app
-RUN mkdir -p temp
+RUN mkdir -p images
 ENTRYPOINT ./app
 EXPOSE 8080
