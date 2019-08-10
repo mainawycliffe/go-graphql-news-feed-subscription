@@ -1,4 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
+
+String get server => Platform.isAndroid ? '10.0.2.2' : 'localhost';
 
 void main() => runApp(MyApp());
 
@@ -10,7 +15,36 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: GraphQLProvider(
+        client: _client(),
+        child: MyHomePage(
+          title: 'GraphQL Subscription Demo',
+        ),
+      ),
+    );
+  }
+
+  ValueNotifier<GraphQLClient> _client() {
+    final httpLink = HttpLink(
+      uri: "http://$server/query",
+    );
+
+    final websocketLink = WebSocketLink(
+      url: "ws://$server/query",
+      config: SocketClientConfig(
+        autoReconnect: true,
+      ),
+    );
+
+    final link = httpLink.concat(websocketLink);
+
+    return ValueNotifier<GraphQLClient>(
+      GraphQLClient(
+        cache: OptimisticCache(
+          dataIdFromObject: typenameDataIdFromObject,
+        ),
+        link: link,
+      ),
     );
   }
 }
