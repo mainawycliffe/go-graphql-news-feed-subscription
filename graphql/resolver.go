@@ -51,11 +51,17 @@ type mutationResolver struct{ *Resolver }
 
 func (r *mutationResolver) Share(ctx context.Context, post NewPost) (*Post, error) {
 
-	url, err := saveUploadedFile(post.Image)
+	url := ""
+	var err error
+
+	// image is optional
+	if post.Image != nil {
+		url, err = saveUploadedFile(post.Image)
 
 	if err != nil {
 		log.Printf("Error saving file: %v", err)
 		return nil, fmt.Errorf("Error saving file")
+	}
 	}
 
 	newPost := &Post{
