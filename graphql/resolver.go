@@ -19,6 +19,8 @@ import (
 
 const imageDir = "images"
 
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
 func GraphQLServer() *Resolver {
 
 	return &Resolver{
@@ -58,10 +60,10 @@ func (r *mutationResolver) Share(ctx context.Context, post NewPost) (*Post, erro
 	if post.Image != nil {
 		url, err = saveUploadedFile(post.Image)
 
-	if err != nil {
-		log.Printf("Error saving file: %v", err)
-		return nil, fmt.Errorf("Error saving file")
-	}
+		if err != nil {
+			log.Printf("Error saving file: %v", err)
+			return nil, fmt.Errorf("Error saving file")
+		}
 	}
 
 	newPost := &Post{
@@ -121,8 +123,6 @@ func (r *subscriptionResolver) NewPostAdded(ctx context.Context) (<-chan *Post, 
 
 	return events, nil
 }
-
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 func randString(n int) string {
 	b := make([]rune, n)
