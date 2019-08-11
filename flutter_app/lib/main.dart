@@ -1,9 +1,23 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_app/model/post.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 
 String get server => Platform.isAndroid ? '10.0.2.2' : 'localhost';
+
+final String newPostAddedSubsciption = r'''
+  subscription NewPostAdded{
+    NewPostAdded {
+      id
+      title
+      content
+      link
+      imageURL
+      postedOn
+    }
+  }
+  ''';
 
 void main() => runApp(MyApp());
 
@@ -50,22 +64,16 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
-
   final String title;
+
+  MyHomePage({Key key, this.title}) : super(key: key);
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
+  var _posts = new List<Post>();
 
   @override
   Widget build(BuildContext context) {
@@ -73,25 +81,53 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.display1,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
+      body: Subscription<Map<String, dynamic>>(
+        'NewPostAdded',
+        newPostAddedSubsciption,
+        builder: ({dynamic loading, dynamic payload, dynamic error}) {
+          if (error != null) {
+            return Center(
+              child: Text(error.toString()),
+            );
+          }
+
+          if (loading == true) {
+            return Center(
+              child: const CircularProgressIndicator(),
+            );
+          }
+          final serialize = new PostJsonSerializer();
+          final post = serialize.fromMap(payload["NewPostAdded"]);
+
+          _posts.add(post);
+
+          return PostsList(_posts);
+        },
       ),
     );
+  }
+}
+
+class PostsList extends StatelessWidget {
+  final List<Post> _posts;
+
+  const PostsList(this._posts);
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(children: [
+      for (var post in _posts)
+        ListTile(
+          leading: _showImageUrl(post),
+          title: Text("${post.title}"),
+          subtitle: Text("${post.content}"),
+        ),
+    ]);
+  }
+
+  Widget _showImageUrl(Post post) {
+    return post.imageURL != ""
+        ? Image.network("http://$server:8080${post.imageURL}")
+        : null;
   }
 }
