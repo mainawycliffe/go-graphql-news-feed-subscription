@@ -101,7 +101,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
           _posts.add(post);
 
-          return PostsList(_posts);
+          // show latest items first
+          return PostsList(_posts.reversed.toList());
         },
       ),
     );
