@@ -2,6 +2,8 @@
 
 This is a demo to demonstrate [GraphQL Subscriptions](https://graphql.org/blog/subscriptions-in-graphql-and-relay/). The backend is build using Golang while the frontend is build using Flutter.
 
+To demo GraphQL Subscriptions, I went with a very simple news feed example. As new posts are being added (shared), you can subscribe and get them in real time. With such a simple example, it is easy to add new post using GraphiQL and watch them show up in the app in real time.
+
 ## Backend
 
 To run the backend, you can use [docker compose](https://docs.docker.com/compose/), simply run `docker-compose up -d --build` at the root directory.
