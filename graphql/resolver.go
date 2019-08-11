@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/h2non/filetype"
+
 	"github.com/99designs/gqlgen/graphql"
 )
 
@@ -63,6 +65,11 @@ func (r *mutationResolver) Share(ctx context.Context, post NewPost) (*Post, erro
 
 		if err != nil {
 			log.Printf("Error saving file: %v", err)
+
+			if err.Error() == "invalid image" {
+				return nil, fmt.Errorf("The file you uploaded is not an image")
+			}
+
 			return nil, fmt.Errorf("Error saving file")
 		}
 	}
@@ -147,6 +154,11 @@ func saveUploadedFile(image *graphql.Upload) (string, error) {
 
 	if err != nil {
 		return "", err
+	}
+
+	// check if file is supported
+	if !filetype.IsImage(content) {
+		return "", fmt.Errorf("invalid image")
 	}
 
 	_, err = f.Write(content)
