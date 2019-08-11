@@ -10,12 +10,15 @@ dependencies:
   flutter:
     sdk: flutter
   graphql_flutter: ^2.0.0
+  jaguar_serializer: 
 
   cupertino_icons: ^0.1.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
+  build_runner: 
+  jaguar_serializer_cli: 
+  
 flutter:
   uses-material-design: true
