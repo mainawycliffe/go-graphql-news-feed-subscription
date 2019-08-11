@@ -155,5 +155,8 @@ func saveUploadedFile(image *graphql.Upload) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("http://localhost:8080/%s/%s", imageDir, filename), nil
+	// 	return fmt.Sprintf("http://localhost:8080/%s/%s", imageDir, filename), nil
+	// return the image path, due to android and ios emulator having different localhost paths
+	// under norm circumstance, this would be upload to an image server and return the CDN url
+	return fmt.Sprintf("/%s/%s", imageDir, filename), nil
 }
