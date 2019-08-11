@@ -26,11 +26,11 @@ class MyApp extends StatelessWidget {
 
   ValueNotifier<GraphQLClient> _client() {
     final httpLink = HttpLink(
-      uri: "http://$server/query",
+      uri: "http://$server:8080/query",
     );
 
     final websocketLink = WebSocketLink(
-      url: "ws://$server/query",
+      url: "ws://$server:8080/query",
       config: SocketClientConfig(
         autoReconnect: true,
       ),
